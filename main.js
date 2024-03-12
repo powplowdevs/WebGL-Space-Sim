@@ -15,7 +15,7 @@ function getColorData(amt){
     for(let i=0; i<amt; i++){
         // colors.push(...[Math.random(),Math.random(),Math.random()])
         if(i==10){
-            colors.push(...[1,0,0]);
+            colors.push(...[0,1,0]);
         }
         else{
             colors.push(...[0.5,0.5,0.5]);
@@ -30,27 +30,15 @@ function getMagnitudeOf3dVector(vec){
 }
 //Subtract 3d vecotrs
 function subtract3dVector(v1,v2){
-    let subVec = [];
-    for(let i=0; i<3; i++){
-        subVec.push(v1[i]-v2[i]);
-    }
-    return subVec;
+    return [v1[0]-v2[0],v1[1]-v2[1],v1[2]-v2[2]];
 }
 //Divide 3d vecotrs by x
 function divide3dVector(vec,x){
-    let divVec = [];
-    for(let i=0; i<3; i++){
-        divVec.push(vec[i]/x);
-    }
-    return divVec;
+    return [vec[0]/x,vec[1]/x,vec[2]/x];
 }
 //Multiply 3d vector by v
 function multiply3dVector(vec,v){
-    let mulVec = [];
-    for(let i=0; i<3; i++){
-        mulVec.push(vec[i]*v);
-    }
-    return mulVec;
+    return [vec[0]*v,vec[1]*v,vec[2]*v];
 }
 //Normalize 3d vector
 function norm3dVector(vec){
@@ -101,19 +89,11 @@ function getGravForceEx(p1,p2,dv, mv){
 }
 //Calculate acceleration force
 function getAccelerationForce(mass, force){
-    let accelerationVec = [];
-    for(let i=0; i<3; i++){
-        accelerationVec.push(force[i]/mass);
-    }
-    return accelerationVec;
+    return [force[0]/mass,force[1]/mass,force[2]/mass];
 }
 //Edit vector by acceleration force
 function editVectorByAccelerationForce(vec, force){
-    let newVec = [];
-    for(let i=0; i<3; i++){
-        newVec.push(vec[i]+(force[i]*deltaTime));
-    }
-    return newVec;
+    return [vec[0]+(force[0]*deltaTime),vec[1]+(force[1]*deltaTime),vec[2]+(force[2]*deltaTime)];
 }
 function scaleValue(value, minInput, maxInput, minOutput, maxOutput) {
     let ratio = (value - minInput) / (maxInput - minInput);
@@ -202,8 +182,8 @@ function createPlanets(amt){
         if(i == 10){
             let pos = [Math.random()-0.5,Math.random()-0.5,Math.random()-0.5];
             let sPoints = createSphere(pos[0],pos[1],pos[2],0.1,20);
-            vData.push(...sPoints   );
-            let mass = 100000000000;
+            vData.push(...pos);
+            let mass = 1000000000000;
             let size = scaleValue(mass,0,mass*2,0,10);
             planets.push(new Planet(Math.random().toString(), size, mass, pos, index));
             sizeData.push(size);
@@ -212,9 +192,9 @@ function createPlanets(amt){
         else{
             let pos = [Math.random()-0.5,Math.random()-0.5,Math.random()-0.5];
             let sPoints = createSphere(pos[0],pos[1],pos[2],0.1,20);
-            vData.push(...sPoints);
+            vData.push(...pos);
             let mass = Math.random()*500000000;
-            let size = scaleValue(mass, 0,900000000,0,10);
+            let size = scaleValue(mass, 0,900000000,0,20);
             planets.push(new Planet(Math.random().toString(), size, mass, pos, index));
             sizeData.push(size);
             index+=3;
@@ -224,7 +204,7 @@ function createPlanets(amt){
 }
 
 //Vertex and color data
-let amt = 200;
+let amt = 2500;
 let sizeData = [];
 let vertexData = createPlanets(amt);
 let colorData = getColorData(amt);
@@ -415,55 +395,55 @@ function animate(){
     //View matrix
     mat4.lookAt(viewMatrix, [cameraX, cameraY, cameraZ], targetPosition, [0, 1, 0]);
 
-    // //Move planets
-    // for(let currIndex=0; currIndex<planets.length; currIndex++){
-    //     let currPlanet = planets[currIndex];
-    //     for(let compareIndex=0; compareIndex<planets.length; compareIndex++){
-    //         let comparePlanet = planets[compareIndex];
-    //         let distVec = subtract3dVector(currPlanet.getPosition(),comparePlanet.getPosition());
-    //         let magVec = getMagnitudeOf3dVector(distVec);
-    //         if(compareIndex!=currIndex && magVec < 0.5){
-    //             //Grav Force
-    //             let gForce = getGravForceEx(currPlanet, comparePlanet, distVec,magVec);
-    //             //Acceleration Force
-    //             let aForce = getAccelerationForce(currPlanet.mass, gForce)
-    //             //New pos
-    //             let newVec = editVectorByAccelerationForce(currPlanet.getPosition(), aForce)
-    //             // newVec = norm3dVector(newVec);
+    //Move planets
+    for(let currIndex=0; currIndex<planets.length; currIndex++){
+        let currPlanet = planets[currIndex];
+        for(let compareIndex=0; compareIndex<planets.length; compareIndex++){
+            let comparePlanet = planets[compareIndex];
+            let distVec = subtract3dVector(currPlanet.getPosition(),comparePlanet.getPosition());
+            let magVec = getMagnitudeOf3dVector(distVec);
+            if(compareIndex!=currIndex && magVec < 0.5){
+                //Grav Force
+                let gForce = getGravForceEx(currPlanet, comparePlanet, distVec,magVec);
+                //Acceleration Force
+                let aForce = getAccelerationForce(currPlanet.mass, gForce)
+                //New pos
+                let newVec = editVectorByAccelerationForce(currPlanet.getPosition(), aForce)
+                // newVec = norm3dVector(newVec);
                 
-    //             //Edit pos in vertex data
-    //             for(let i=0; i<3; i++){
-    //                 vertexData[currPlanet.getIndex()+i] += newVec[i]*deltaTime;
-    //             }            
-    //         }
-    //         //Check collistion
-    //         if(compareIndex!=currIndex && magVec < 0.01){
-    //             //change color of both planets to red
-    //             colorData[currPlanet.getIndex()] = 1;//r
-    //             colorData[currPlanet.getIndex()+1] = 0;//g
-    //             colorData[currPlanet.getIndex()+2] = 0;//b
-    //             colorData[comparePlanet.getIndex()] = 1;//r
-    //             colorData[comparePlanet.getIndex()+1] = 0;//g
-    //             colorData[comparePlanet.getIndex()+2] = 0;//b
-    //             // planets.pop(comparePlanet);
-    //         }
-    //     }
-    // }
+                //Edit pos in vertex data
+                for(let i=0; i<3; i++){
+                    vertexData[currPlanet.getIndex()+i] += newVec[i]*deltaTime;
+                }            
+            }
+            //Check collistion
+            if(compareIndex!=currIndex && magVec < 0.01){
+                //change color of both planets to red
+                colorData[currPlanet.getIndex()] = 1;//r
+                colorData[currPlanet.getIndex()+1] = 0;//g
+                colorData[currPlanet.getIndex()+2] = 0;//b
+                colorData[comparePlanet.getIndex()] = 1;//r
+                colorData[comparePlanet.getIndex()+1] = 0;//g
+                colorData[comparePlanet.getIndex()+2] = 0;//b
+                // planets.pop(comparePlanet);
+            }
+        }
+    }
 
-    // //Scale objects based on distance from camera
-    // for (let i = 0; i < planets.length; i++) {
-    //     let planet = planets[i];
-    //     let distVec = subtract3dVector(planet.getPosition(), [cameraX, cameraY, cameraZ]);
-    //     let distance = getMagnitudeOf3dVector(distVec);
+    //Scale objects based on distance from camera
+    for (let i = 0; i < planets.length; i++) {
+        let planet = planets[i];
+        let distVec = subtract3dVector(planet.getPosition(), [cameraX, cameraY, cameraZ]);
+        let distance = getMagnitudeOf3dVector(distVec);
 
-    //     let unitVec = divide3dVector(distVec, distance);
+        let unitVec = divide3dVector(distVec, distance);
 
-    //     let dotProduct = unitVec[0] * Math.sin(yaw) + unitVec[1] * Math.sin(pitch) + unitVec[2] * Math.cos(yaw);
+        let dotProduct = unitVec[0] * Math.sin(yaw) + unitVec[1] * Math.sin(pitch) + unitVec[2] * Math.cos(yaw);
 
-    //     let scaleFactor = dotProduct < 0 ? -1 / distance : 1 / distance;
+        let scaleFactor = dotProduct < 0 ? -1 / distance : 1 / distance;
 
-    //     sizeData[planet.getIndex() / 3] = planet.getSize() * scaleFactor;
-    // }
+        sizeData[planet.getIndex() / 3] = planet.getSize() * scaleFactor;
+    }
 
     //bind vertex and color data
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -477,7 +457,7 @@ function animate(){
     mat4.multiply(mvpMatrix, projectionMatrix, modleViewMatrix);
     
     gl.uniformMatrix4fv(uniformLocation.matrix, false, mvpMatrix);
-    gl.drawArrays(gl.TRIANGLES, 0, vertexData.length/36);
+    gl.drawArrays(gl.POINTS, 0, vertexData.length/3);
     
 }
 
